@@ -17,13 +17,12 @@ contract METHL2Script is Script {
     address public immutable adminAddress = vm.envAddress("ADMIN_ADDRESS");
 
     TimelockController public proxyAdmin;
-    METHL2 public mETHL2;
     METHL2 public implementationContract;
 
     function setUp() public {}
 
     function run() public {
-        vm.broadcast();
+        vm.startBroadcast(adminAddress);
         implementationContract = new METHL2();
 
         console2.log("IMPLEMENTATION CONTRACT ADDRESS: ", address(implementationContract));
@@ -46,6 +45,7 @@ contract METHL2Script is Script {
             address(proxyAdmin),
             data
         );
+        vm.stopBroadcast();
 
         console2.log("PROXY CONTRACT ADDRESS: ", address(proxyContract));
     }

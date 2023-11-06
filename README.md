@@ -21,9 +21,16 @@ $ forge test
 $ forge fmt
 ```
 
+### Dry run
+
+```shell
+$ source .env
+$ forge script script/METHL2.s.sol --vv --rpc-url ${RPC_URL}
+```
+
 ### Deploy
 
 ```shell
 $ source .env
-$ forge script script/METHL2.s.sol --broadcast --rpc-url ${RPC_URL}
+$ forge script script/METHL2.s.sol -vv --rpc-url ${RPC_URL} --broadcast
 ```

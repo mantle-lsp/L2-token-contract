@@ -21,7 +21,7 @@ contract METHL2 is
 {
     address public l1Token;
     address public l2Bridge;
-    uint8 public decimal;
+    uint8 internal decimal;
 
     modifier onlyL2Bridge() {
         require(msg.sender == l2Bridge, "Only L2 Bridge can mint and burn");
