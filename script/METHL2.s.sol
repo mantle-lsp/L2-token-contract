@@ -6,10 +6,15 @@ import {
     TransparentUpgradeableProxy
 } from "openzeppelin/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {TimelockController} from "openzeppelin/governance/TimelockController.sol";
+import {Script, console2} from "forge-std/Script.sol";
 
 import {METHL2} from "../src/METHL2.sol";
 
-import {Script, console2} from "forge-std/Script.sol";
+struct Deployments {
+    TimelockController proxyAdmin;
+    TransparentUpgradeableProxy proxy;
+    METHL2 mETHL2;
+}
 
 contract METHL2Script is Script {
     address public immutable l1TokenAddress = vm.envAddress("L1_TOKEN_ADDRESS");
@@ -17,13 +22,12 @@ contract METHL2Script is Script {
     address public immutable adminAddress = vm.envAddress("ADMIN_ADDRESS");
 
     TimelockController public proxyAdmin;
-    METHL2 public mETHL2;
     METHL2 public implementationContract;
 
     function setUp() public {}
 
     function run() public {
-        vm.broadcast();
+        vm.startBroadcast(msg.sender);
         implementationContract = new METHL2();
 
         console2.log("IMPLEMENTATION CONTRACT ADDRESS: ", address(implementationContract));
@@ -46,7 +50,24 @@ contract METHL2Script is Script {
             address(proxyAdmin),
             data
         );
+        vm.stopBroadcast();
 
         console2.log("PROXY CONTRACT ADDRESS: ", address(proxyContract));
+
+        Deployments memory deps;
+        deps.proxyAdmin = proxyAdmin;
+        deps.proxy = proxyContract;
+        deps.mETHL2 = implementationContract;
+
+        writeDeployments(deps);
+    }
+
+    function _deploymentsFile() internal view returns (string memory) {
+        string memory root = vm.projectRoot();
+        return string.concat(root, "/deployments/", vm.toString(block.chainid));
+    }
+
+    function writeDeployments(Deployments memory deps) public {
+        vm.writeFileBinary(_deploymentsFile(), abi.encode(deps));
     }
 }
