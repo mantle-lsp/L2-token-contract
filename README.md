@@ -21,7 +21,7 @@ $ forge test
 $ forge fmt
 ```
 
-### Dry run
+### Deploy DryRun
 
 ```shell
 $ source .env
@@ -33,4 +33,18 @@ $ forge script script/METHL2.s.sol --vv --rpc-url ${RPC_URL}
 ```shell
 $ source .env
 $ forge script script/METHL2.s.sol -vv --rpc-url ${RPC_URL} --broadcast
+```
+
+### Upgrade DryRun
+
+```shell
+$ source .env
+$ forge script script/Upgrade.s.sol:Upgrade -vv --rpc-url ${RPC_URL} -s "upgrade(string memory, bool)" METHL2 false
+```
+
+### Deploy
+
+```shell
+$ source .env
+$ forge script script/Upgrade.s.sol:Upgrade -vv --rpc-url ${RPC_URL} -s "upgrade(string memory, bool)" METHL2 false --broadcast
 ```
