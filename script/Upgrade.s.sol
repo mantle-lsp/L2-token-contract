@@ -44,7 +44,7 @@ contract Upgrade is Script {
             METHL2 impl = new METHL2();
             return (address(depls.proxy), address(impl));
         }
-        revert("Uknown contract");
+        revert("Unknown contract");
     }
 
     function upgrade(string memory contractName, bool justPrintCalldata) public {
@@ -76,7 +76,7 @@ contract Upgrade is Script {
             vm.startBroadcast();
         } else {
             console2.log("=============================");
-            console2.log("REQUESTED NOT TO EXECUTE");
+            console2.log("REQUESTED NOT TO EXECUTE, justPrintCalldata set to true");
             console2.log("MUST CALL PROXY ADMIN WITH CALLDATA");
             console2.log("=============================");
             console2.log("Proxy:");
