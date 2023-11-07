@@ -42,7 +42,7 @@ $ source .env
 $ forge script script/Upgrade.s.sol:Upgrade -vv --rpc-url ${RPC_URL} -s "upgrade(string memory, bool)" METHL2 false
 ```
 
-### Deploy
+### Upgrade
 
 ```shell
 $ source .env
