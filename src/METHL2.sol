@@ -23,6 +23,8 @@ contract METHL2 is
     address public l2Bridge;
     uint8 internal decimal;
 
+    event NonceUsed(address indexed owner, uint256 nonce);
+
     modifier onlyL2Bridge() {
         require(msg.sender == l2Bridge, "Only L2 Bridge can mint and burn");
         _;
@@ -81,8 +83,9 @@ contract METHL2 is
 
     // @dev used to consume a nonce so that the user is able to invalidate a signature. Returns the current value and
     // increments.
-    function useNonce() external virtual returns (uint256) {
-        return ERC20PermitUpgradeable._useNonce(_msgSender());
+    function useNonce() external virtual returns (uint256 nonce) {
+        nonce = _useNonce(_msgSender());
+        emit NonceUsed(_msgSender(), nonce);
     }
 
     function supportsInterface(bytes4 _interfaceId)
