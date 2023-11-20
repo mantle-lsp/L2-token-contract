@@ -3,7 +3,10 @@ pragma solidity ^0.8.20;
 /* solhint-disable no-console */
 
 import "openzeppelin-contracts/lib/forge-std/src/Script.sol";
-import {ITransparentUpgradeableProxy, TransparentUpgradeableProxy} from "openzeppelin/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {
+    ITransparentUpgradeableProxy,
+    TransparentUpgradeableProxy
+} from "openzeppelin/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {TimelockController} from "openzeppelin/governance/TimelockController.sol";
 
 import {METHL2} from "../src/METHL2.sol";
@@ -97,7 +100,9 @@ contract Upgrade is Script {
         scheduleAndExecute(proxyAdmin, proxyAddr, 0, callData);
     }
 
-    function scheduleAndExecute(TimelockController controller, address target, uint256 value, bytes memory data) public {
+    function scheduleAndExecute(TimelockController controller, address target, uint256 value, bytes memory data)
+        public
+    {
         controller.schedule({
             target: target,
             value: value,

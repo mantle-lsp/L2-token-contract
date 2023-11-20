@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.20;
+pragma solidity 0.8.20;
 
 import {Initializable} from "openzeppelin-upgradeable/proxy/utils/Initializable.sol";
 import {AccessControlEnumerableUpgradeable} from
@@ -79,7 +79,8 @@ contract METHL2 is
         return ERC20PermitUpgradeable.nonces(owner);
     }
 
-    // @dev used to consume a nonce so that the user is able to invalidate a signature. Returns the current value and increments.
+    // @dev used to consume a nonce so that the user is able to invalidate a signature. Returns the current value and
+    // increments.
     function useNonce() external virtual returns (uint256) {
         return ERC20PermitUpgradeable._useNonce(_msgSender());
     }
