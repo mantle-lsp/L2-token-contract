@@ -15,6 +15,8 @@ contract METHL2Test is Test {
     address public immutable l1TokenAddress = makeAddr("l1Token");
     address public immutable l2BridgeAddress = makeAddr("l2Bridge");
     address public immutable adminAddress = makeAddr("admin");
+    address public immutable addBlockListContractAccount = makeAddr("addBlockListContract");
+    address public immutable removeBlockListContractAccount = makeAddr("removeBlockListContract");
 
     TimelockController public proxyAdmin;
     METHL2 public mETHL2;
@@ -99,12 +101,10 @@ contract MockBlockList is IBlockList {
     }
 }
 
-contract METHBlockListTest is METHL2Test {
+contract METHL2BlockListTest is METHL2Test {
     address public blockedUser = makeAddr("blockedUser");
     address public normalUser = makeAddr("normalUser");
     address public normalUser2 = makeAddr("normalUser2");
-    address public immutable addBlockListContractAccount = makeAddr("addBlockListContract");
-    address public immutable removeBlockListContractAccount = makeAddr("removeBlockListContract");
     uint256 public amount = 100 ether;
     MockBlockList public blockList;
     MockBlockList public blockList2;
@@ -224,5 +224,83 @@ contract METHBlockListTest is METHL2Test {
         vm.expectRevert("Invalid block list contract");
         vm.prank(addBlockListContractAccount);
         mETHL2.addBlockListContract(address(6));
+    }
+}
+
+// In practice there may be no need for a standalone Rescuer contract
+contract MockRescuer {
+    METHL2 mETHL2;
+    constructor(address mETHAddress) {
+        mETHL2 = METHL2(mETHAddress);
+    }
+    function forceMint(address account, uint256 amount, bool excludeBlockList) external {
+        mETHL2.forceMint(account, amount, excludeBlockList);
+    }
+    function forceBurn(address account, uint256 amount) external {
+        mETHL2.forceBurn(account, amount);
+    }
+}
+
+contract METHL2ForceMintBurnTest is METHL2Test {
+    MockRescuer rescuer;
+    address user = makeAddr("user");
+
+    function setUp() public override {
+        super.setUp();
+        rescuer = new MockRescuer(address(mETHL2));
+
+        bytes32 addBlockListContractRole = mETHL2.ADD_BLOCK_LIST_CONTRACT_ROLE();
+        vm.prank(adminAddress);
+        mETHL2.grantRole(addBlockListContractRole, addBlockListContractAccount);
+        bytes32 removeBlockListContractRole = mETHL2.REMOVE_BLOCK_LIST_CONTRACT_ROLE();
+        vm.prank(adminAddress);
+        mETHL2.grantRole(removeBlockListContractRole, removeBlockListContractAccount);
+
+    }
+
+    function testOrdinaryAccountCannotForceMintBurn() public {
+        vm.expectRevert("AccessControl: account 0x5991a2df15a8f6a256d3ec51e99254cd3fb576a9 is missing role 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6");
+        rescuer.forceMint(user, 233, false);
+        vm.expectRevert("AccessControl: account 0x5991a2df15a8f6a256d3ec51e99254cd3fb576a9 is missing role 0x3c11d16cbaffd01df69ce1c404f6340ee057498f5f00246190ea54220576a848");
+        rescuer.forceBurn(user, 133);
+    }
+
+    function testForceMintBurn() public {
+        bytes32 minterRole = mETHL2.MINTER_ROLE();
+        vm.prank(mETHL2.getRoleMember(mETHL2.DEFAULT_ADMIN_ROLE(), 0));
+        mETHL2.grantRole(minterRole, address(rescuer));
+        vm.prank(address(rescuer));
+        rescuer.forceMint(user, 233, false);
+
+        bytes32 burnerRole = mETHL2.BURNER_ROLE();
+        vm.prank(mETHL2.getRoleMember(mETHL2.DEFAULT_ADMIN_ROLE(), 0));
+        mETHL2.grantRole(burnerRole, address(rescuer));
+        assert(mETHL2.balanceOf(user) == 233);
+        vm.prank(address(rescuer));
+        rescuer.forceBurn(user, 133);
+        assert(mETHL2.balanceOf(user) == 100);
+    }
+
+    function testForceMintForBlockedAccount() public {
+        bytes32 minterRole = mETHL2.MINTER_ROLE();
+        vm.prank(mETHL2.getRoleMember(mETHL2.DEFAULT_ADMIN_ROLE(), 0));
+        mETHL2.grantRole(minterRole, address(rescuer));
+
+        vm.prank(address(rescuer));
+        rescuer.forceMint(user, 233, true);
+        assertEq(mETHL2.balanceOf(user), 233);
+
+        MockBlockList blockList = new MockBlockList();
+        vm.prank(addBlockListContractAccount);
+        mETHL2.addBlockListContract(address(blockList));
+        blockList.setBlocked(user, true);
+
+        vm.expectRevert("0x6ca6d1e2d5347bfab1d91e883f1915560e09129d is in block list");
+        vm.prank(address(rescuer));
+        rescuer.forceMint(user, 233, true);
+        assertEq(mETHL2.balanceOf(user), 233);
+
+        rescuer.forceMint(user, 233, false);
+        assertEq(mETHL2.balanceOf(user), 466);
     }
 }
