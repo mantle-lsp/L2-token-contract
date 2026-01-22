@@ -32,13 +32,21 @@ contract METHL2 is
 
     using EnumerableSet for EnumerableSet.AddressSet;
     EnumerableSet.AddressSet private _blockListContracts;
+    
+    /// @notice LayerZero Adapter address for cross-chain mint/burn
+    address public lzAdapter;
+    
+    /// @notice Flag to enable/disable L2Bridge mint/burn functionality
+    bool public l2BridgeEnabled;
+
     event BlockListContractAdded(address indexed blockList);
     event BlockListContractRemoved(address indexed blockList);
-    
     event NonceUsed(address indexed owner, uint256 nonce);
+    event LzAdapterChanged(address indexed oldAdapter, address indexed newAdapter);
+    event L2BridgeEnabledChanged(bool enabled);
 
-    modifier onlyL2Bridge() {
-        require(msg.sender == l2Bridge, "Only L2 Bridge can mint and burn");
+    modifier onlyL2BridgeAndAdapter() {
+        require(msg.sender == l2Bridge && l2BridgeEnabled || msg.sender == lzAdapter, "mETH: caller is not L2Bridge or L2Bridge disabled or LZ Adapter");
         _;
     }
 
@@ -61,6 +69,30 @@ contract METHL2 is
         decimal = 18;
     }
 
+    /// @notice Reinitializes the contract for V2 upgrade
+    /// @param _lzAdapter Address of LayerZero Adapter
+    function initializeV2(address _lzAdapter) external reinitializer(2) {
+        l2BridgeEnabled = true;
+        lzAdapter = _lzAdapter;
+        emit LzAdapterChanged(address(0), _lzAdapter);
+        emit L2BridgeEnabledChanged(true);
+    }
+
+    /// @notice Set LayerZero Adapter address
+    /// @param _lzAdapter New adapter address
+    function setLzAdapter(address _lzAdapter) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        address oldAdapter = lzAdapter;
+        lzAdapter = _lzAdapter;
+        emit LzAdapterChanged(oldAdapter, _lzAdapter);
+    }
+
+    /// @notice Enable or disable L2Bridge mint/burn functionality
+    /// @param _enabled True to enable, false to disable
+    function setL2BridgeEnabled(bool _enabled) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        l2BridgeEnabled = _enabled;
+        emit L2BridgeEnabledChanged(_enabled);
+    }
+
     function forceMint(address account, uint256 amount, bool excludeBlockList) external onlyRole(MINTER_ROLE) {
         if (excludeBlockList) {
             require(!isBlocked(account), string(abi.encodePacked(Strings.toHexString(uint160(account), 20), " is in block list")));
@@ -74,17 +106,17 @@ contract METHL2 is
 
     // @dev used by L2Bridge to mint tokens on L2
 
-    function mint(address _to, uint256 _amount) public virtual onlyL2Bridge {
+    function mint(address _to, uint256 _amount) public virtual onlyL2BridgeAndAdapter returns (bool) {
         _mint(_to, _amount);
-
         emit Mint(_to, _amount);
+        return true;
     }
 
     // @dev used by L2Bridge to burn tokens on L2
-    function burn(address _from, uint256 _amount) public virtual onlyL2Bridge {
+    function burn(address _from, uint256 _amount) public virtual onlyL2BridgeAndAdapter returns (bool) {
         _burn(_from, _amount);
-
         emit Burn(_from, _amount);
+        return true;
     }
 
     function decimals() public view virtual override returns (uint8) {

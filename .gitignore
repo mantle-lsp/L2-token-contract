@@ -13,5 +13,14 @@ docs/
 # Dotenv file
 .env
 
+# pnpm
+pnpm-error.log
+
+# Editor and OS files
+.DS_Store
 .idea/
 
+# LayerZero specific files
+.layerzero
+
+node_modules/

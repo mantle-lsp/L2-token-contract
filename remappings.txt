@@ -6,3 +6,7 @@ openzeppelin-contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/
 openzeppelin-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/
 openzeppelin-contracts/=lib/openzeppelin-contracts/
 openzeppelin/=lib/openzeppelin-contracts/contracts/
+@layerzerolabs/=node_modules/@layerzerolabs/
+solidity-bytes-utils/=lib/solidity-bytes-utils/
+@openzeppelin/contracts/=lib/oz-contracts-502/contracts/
+@openzeppelin/contracts-upgradeable/=lib/oz-contracts-upgradeable-502/contracts/
