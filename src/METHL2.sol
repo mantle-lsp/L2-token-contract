@@ -46,7 +46,7 @@ contract METHL2 is
     event L2BridgeEnabledChanged(bool enabled);
 
     modifier onlyL2BridgeAndAdapter() {
-        require(msg.sender == l2Bridge && l2BridgeEnabled || msg.sender == lzAdapter, "mETH: caller is not L2Bridge or L2Bridge disabled or LZ Adapter");
+        require((msg.sender == l2Bridge && l2BridgeEnabled) || msg.sender == lzAdapter, "mETH: caller is not L2Bridge or L2Bridge disabled or LZ Adapter");
         _;
     }
 
