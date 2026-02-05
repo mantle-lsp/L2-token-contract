@@ -17,7 +17,9 @@ contract L1mETHAdapter is
     }
 
     // @dev _token is the proxy address of L1cmETH
-    constructor(address _token, address _lzEndpoint) OFTAdapterUpgradeable(_token, _lzEndpoint) {}
+    constructor(address _token, address _lzEndpoint) OFTAdapterUpgradeable(_token, _lzEndpoint) {
+        _disableInitializers();
+    }
 
     /**
      * @dev Initializes the OFTAdapter.

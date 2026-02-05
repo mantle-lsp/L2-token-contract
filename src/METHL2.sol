@@ -25,6 +25,7 @@ contract METHL2 is
     bytes32 public constant REMOVE_BLOCK_LIST_CONTRACT_ROLE = keccak256("REMOVE_BLOCK_LIST_CONTRACT_ROLE");
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
+    bytes32 public constant BRIDGE_MANAGER_ROLE = keccak256("BRIDGE_MANAGER_ROLE");
 
     address public l1Token;
     address public l2Bridge;
@@ -54,7 +55,7 @@ contract METHL2 is
         _disableInitializers();
     }
 
-    /// @notice Inititalizes the contract.
+    /// @notice Initializes the contract.
     /// @dev MUST be called during the contract upgrade to set up the proxies state.
     function initialize(address _l2Bridge, address _l1Token, address _admin) external initializer {
         __AccessControlEnumerable_init();
@@ -72,6 +73,7 @@ contract METHL2 is
     /// @notice Reinitializes the contract for V2 upgrade
     /// @param _lzAdapter Address of LayerZero Adapter
     function initializeV2(address _lzAdapter) external reinitializer(2) {
+        require(_lzAdapter != address(0), "mETH: lzAdapter cannot be zero address");
         l2BridgeEnabled = true;
         lzAdapter = _lzAdapter;
         emit LzAdapterChanged(address(0), _lzAdapter);
@@ -80,15 +82,18 @@ contract METHL2 is
 
     /// @notice Set LayerZero Adapter address
     /// @param _lzAdapter New adapter address
-    function setLzAdapter(address _lzAdapter) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setLzAdapter(address _lzAdapter) external onlyRole(BRIDGE_MANAGER_ROLE) {
+        require(_lzAdapter != address(0), "mETH: lzAdapter cannot be zero address");
         address oldAdapter = lzAdapter;
+        require(_lzAdapter != oldAdapter, "mETH: lzAdapter is already set to this address");
         lzAdapter = _lzAdapter;
         emit LzAdapterChanged(oldAdapter, _lzAdapter);
     }
 
     /// @notice Enable or disable L2Bridge mint/burn functionality
     /// @param _enabled True to enable, false to disable
-    function setL2BridgeEnabled(bool _enabled) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setL2BridgeEnabled(bool _enabled) external onlyRole(BRIDGE_MANAGER_ROLE) {
+        require(_enabled != l2BridgeEnabled, "mETH: l2BridgeEnabled is already set to this value");
         l2BridgeEnabled = _enabled;
         emit L2BridgeEnabledChanged(_enabled);
     }

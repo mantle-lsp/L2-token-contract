@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
-
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { MintBurnOFTAdapterUpgradeable, IMintableBurnable } from "./MintBurnOFTAdapterUpgradeable.sol";
 
 contract L2mETHAdapter is MintBurnOFTAdapterUpgradeable {
@@ -17,7 +15,9 @@ contract L2mETHAdapter is MintBurnOFTAdapterUpgradeable {
         address _token,
         IMintableBurnable _minterBurner,
         address _lzEndpoint
-    ) MintBurnOFTAdapterUpgradeable(_token, _minterBurner, _lzEndpoint) {}
+    ) MintBurnOFTAdapterUpgradeable(_token, _minterBurner, _lzEndpoint) {
+        _disableInitializers();
+    }
 
     function initialize(Init memory init) external initializer {
         if (init.delegate == address(0) || init.owner == address(0)) {
