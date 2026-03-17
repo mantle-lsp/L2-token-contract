@@ -106,6 +106,7 @@ contract Upgrade is Script {
     function upgradeToV2(address lzAdapter, bool justPrintCalldata) public {
         Deployments memory depls = readDeployments();
         console2.log("Deployments:", address(depls.proxy));
+        console2.log("Deployer address:", msg.sender);
         console2.log("ProxyAdmin:", address(depls.proxyAdmin));
         console2.log("METHL2:", address(depls.mETHL2));
 

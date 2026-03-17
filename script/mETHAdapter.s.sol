@@ -77,10 +77,12 @@ contract mETHAdapterScript is Script {
         console2.log("Token:", tokenAddress);
         console2.log("LZ Endpoint:", lzEndpointAddress);
         console2.log("Proxy Admin:", proxyAdminAddress);
+        console2.log("Deployer address:", deployer);
         console2.log();
 
         vm.startBroadcast(msg.sender);
-        EmptyContract empty = deployEmptyContract();
+        EmptyContract empty = EmptyContract(0xa63780C48eb181Ec85e4E7592191B1c5d54fe1A9);
+        // EmptyContract empty = deployEmptyContract();
         TransparentUpgradeableProxy proxy = newProxy(empty, deployer, "mETHAdapter");
 
         // Deploy implementation contract with CREATE2
@@ -137,10 +139,12 @@ contract mETHAdapterScript is Script {
         console2.log("MinterBurner:", minterBurnerAddress);
         console2.log("LZ Endpoint:", lzEndpointAddress);
         console2.log("Proxy Admin:", proxyAdminAddress);
+        console2.log("Deployer address:", deployer);
         console2.log();
 
         vm.startBroadcast(msg.sender);
-        EmptyContract empty = deployEmptyContract();
+        EmptyContract empty = EmptyContract(0xa63780C48eb181Ec85e4E7592191B1c5d54fe1A9);
+        // EmptyContract empty = deployEmptyContract();
         TransparentUpgradeableProxy proxy = newProxy(empty, deployer, "mETHAdapter");
 
         // Deploy implementation contract with CREATE2
