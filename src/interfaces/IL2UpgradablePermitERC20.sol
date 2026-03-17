@@ -8,9 +8,9 @@ import {IERC165Upgradeable} from "openzeppelin-upgradeable/utils/introspection/I
 interface IL2UpgradablePermitERC20 is IERC20Upgradeable, IERC20PermitUpgradeable, IERC165Upgradeable {
     function l1Token() external returns (address);
 
-    function mint(address _to, uint256 _amount) external;
+    function mint(address _to, uint256 _amount) external returns (bool);
 
-    function burn(address _from, uint256 _amount) external;
+    function burn(address _from, uint256 _amount) external returns (bool);
 
     event Mint(address indexed _account, uint256 _amount);
     event Burn(address indexed _account, uint256 _amount);

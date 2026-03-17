@@ -100,6 +100,88 @@ contract Upgrade is Script {
         scheduleAndExecute(proxyAdmin, proxyAddr, 0, callData);
     }
 
+    /// @notice Upgrade METHL2 to V2 with LayerZero Adapter support (upgradeToAndCall)
+    /// @param lzAdapter Address of the LayerZero Adapter (can be address(0) to set later)
+    /// @param justPrintCalldata If true, only print calldata without executing
+    function upgradeToV2(address lzAdapter, bool justPrintCalldata) public {
+        Deployments memory depls = readDeployments();
+        console2.log("Deployments:", address(depls.proxy));
+        console2.log("Deployer address:", msg.sender);
+        console2.log("ProxyAdmin:", address(depls.proxyAdmin));
+        console2.log("METHL2:", address(depls.mETHL2));
+
+        vm.startBroadcast(msg.sender);
+        METHL2 newImpl = new METHL2();
+        vm.stopBroadcast();
+
+        address proxyAddr = address(depls.proxy);
+        address implAddress = address(newImpl);
+
+        // Build upgradeToAndCall calldata with initializeV2
+        bytes memory initData = abi.encodeCall(METHL2.initializeV2, (lzAdapter));
+        bytes memory callData = abi.encodeCall(
+            ITransparentUpgradeableProxy.upgradeToAndCall,
+            (implAddress, initData)
+        );
+
+        console2.log("=============================");
+        console2.log("METHL2 V2 Upgrade (upgradeToAndCall)");
+        console2.log("=============================");
+        console2.log("METHL2 address (proxy):");
+        console2.log(proxyAddr);
+        console2.log("New implementation address:");
+        console2.log(implAddress);
+        console2.log("LZ Adapter address:", lzAdapter);
+        console2.log();
+
+        TimelockController proxyAdmin;
+
+        if (!justPrintCalldata) {
+            console2.log("=============================");
+            console2.log("SUBMITTING UPGRADE TX ONCHAIN");
+            console2.log("=============================");
+
+            proxyAdmin = depls.proxyAdmin;
+            vm.startBroadcast();
+        } else {
+            console2.log("=============================");
+            console2.log("REQUESTED NOT TO EXECUTE, justPrintCalldata set to true");
+            console2.log("MUST CALL PROXY ADMIN WITH CALLDATA");
+            console2.log("=============================");
+            console2.log("Proxy:");
+            console2.log(proxyAddr);
+            console2.log("Calldata to Proxy (upgradeToAndCall):");
+            console2.logBytes(callData);
+            console2.log("---");
+            console2.log("initializeV2 Calldata (for reference):");
+            console2.logBytes(initData);
+            console2.log("---");
+            console2.log("ProxyAdmin:");
+            console2.log(address(depls.proxyAdmin));
+            CalldataPrinter printer = new CalldataPrinter("ProxyAdmin");
+            printer.setSelectorName(TimelockController.schedule.selector, "schedule");
+            printer.setSelectorName(TimelockController.execute.selector, "execute");
+
+            proxyAdmin = TimelockController(payable(address(printer)));
+        }
+
+        // Run the upgrade with initializeV2
+        scheduleAndExecute(proxyAdmin, proxyAddr, 0, callData);
+
+        if (!justPrintCalldata) {
+            vm.stopBroadcast();
+
+            // Verify upgrade
+            METHL2 upgraded = METHL2(proxyAddr);
+            console2.log();
+            console2.log("=============================");
+            console2.log("Upgrade Verification");
+            console2.log("=============================");
+            console2.log("lzAdapter:", upgraded.lzAdapter());
+            console2.log("l2BridgeEnabled:", upgraded.l2BridgeEnabled());
+        }
+    }
+
     function scheduleAndExecute(TimelockController controller, address target, uint256 value, bytes memory data)
         public
     {

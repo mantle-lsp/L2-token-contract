@@ -25,6 +25,7 @@ contract METHL2 is
     bytes32 public constant REMOVE_BLOCK_LIST_CONTRACT_ROLE = keccak256("REMOVE_BLOCK_LIST_CONTRACT_ROLE");
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
+    bytes32 public constant BRIDGE_MANAGER_ROLE = keccak256("BRIDGE_MANAGER_ROLE");
 
     address public l1Token;
     address public l2Bridge;
@@ -32,13 +33,21 @@ contract METHL2 is
 
     using EnumerableSet for EnumerableSet.AddressSet;
     EnumerableSet.AddressSet private _blockListContracts;
+    
+    /// @notice LayerZero Adapter address for cross-chain mint/burn
+    address public lzAdapter;
+    
+    /// @notice Flag to enable/disable L2Bridge mint/burn functionality
+    bool public l2BridgeEnabled;
+
     event BlockListContractAdded(address indexed blockList);
     event BlockListContractRemoved(address indexed blockList);
-    
     event NonceUsed(address indexed owner, uint256 nonce);
+    event LzAdapterChanged(address indexed oldAdapter, address indexed newAdapter);
+    event L2BridgeEnabledChanged(bool enabled);
 
-    modifier onlyL2Bridge() {
-        require(msg.sender == l2Bridge, "Only L2 Bridge can mint and burn");
+    modifier onlyL2BridgeAndAdapter() {
+        require((msg.sender == l2Bridge && l2BridgeEnabled) || msg.sender == lzAdapter, "mETH: caller is not L2Bridge or L2Bridge disabled or LZ Adapter");
         _;
     }
 
@@ -46,7 +55,7 @@ contract METHL2 is
         _disableInitializers();
     }
 
-    /// @notice Inititalizes the contract.
+    /// @notice Initializes the contract.
     /// @dev MUST be called during the contract upgrade to set up the proxies state.
     function initialize(address _l2Bridge, address _l1Token, address _admin) external initializer {
         __AccessControlEnumerable_init();
@@ -59,6 +68,34 @@ contract METHL2 is
         l2Bridge = _l2Bridge;
 
         decimal = 18;
+    }
+
+    /// @notice Reinitializes the contract for V2 upgrade
+    /// @param _lzAdapter Address of LayerZero Adapter
+    function initializeV2(address _lzAdapter) external reinitializer(2) {
+        require(_lzAdapter != address(0), "mETH: lzAdapter cannot be zero address");
+        l2BridgeEnabled = true;
+        lzAdapter = _lzAdapter;
+        emit LzAdapterChanged(address(0), _lzAdapter);
+        emit L2BridgeEnabledChanged(true);
+    }
+
+    /// @notice Set LayerZero Adapter address
+    /// @param _lzAdapter New adapter address
+    function setLzAdapter(address _lzAdapter) external onlyRole(BRIDGE_MANAGER_ROLE) {
+        require(_lzAdapter != address(0), "mETH: lzAdapter cannot be zero address");
+        address oldAdapter = lzAdapter;
+        require(_lzAdapter != oldAdapter, "mETH: lzAdapter is already set to this address");
+        lzAdapter = _lzAdapter;
+        emit LzAdapterChanged(oldAdapter, _lzAdapter);
+    }
+
+    /// @notice Enable or disable L2Bridge mint/burn functionality
+    /// @param _enabled True to enable, false to disable
+    function setL2BridgeEnabled(bool _enabled) external onlyRole(BRIDGE_MANAGER_ROLE) {
+        require(_enabled != l2BridgeEnabled, "mETH: l2BridgeEnabled is already set to this value");
+        l2BridgeEnabled = _enabled;
+        emit L2BridgeEnabledChanged(_enabled);
     }
 
     function forceMint(address account, uint256 amount, bool excludeBlockList) external onlyRole(MINTER_ROLE) {
@@ -74,17 +111,17 @@ contract METHL2 is
 
     // @dev used by L2Bridge to mint tokens on L2
 
-    function mint(address _to, uint256 _amount) public virtual onlyL2Bridge {
+    function mint(address _to, uint256 _amount) public virtual onlyL2BridgeAndAdapter returns (bool) {
         _mint(_to, _amount);
-
         emit Mint(_to, _amount);
+        return true;
     }
 
     // @dev used by L2Bridge to burn tokens on L2
-    function burn(address _from, uint256 _amount) public virtual onlyL2Bridge {
+    function burn(address _from, uint256 _amount) public virtual onlyL2BridgeAndAdapter returns (bool) {
         _burn(_from, _amount);
-
         emit Burn(_from, _amount);
+        return true;
     }
 
     function decimals() public view virtual override returns (uint8) {
