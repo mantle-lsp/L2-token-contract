@@ -272,9 +272,9 @@ contract Utils is Script {
         console.log("params");
         console.logBytes(abi.encodeWithSelector(IOAppOptionsType3(l1Adaptor).setEnforcedOptions.selector, aEnforcedOptions));
         console.log("-----------------------------");
-        vm.startBroadcast();
-        IOAppOptionsType3(l1Adaptor).setEnforcedOptions(aEnforcedOptions);
-        vm.stopBroadcast();
+        // vm.startBroadcast();
+        // IOAppOptionsType3(l1Adaptor).setEnforcedOptions(aEnforcedOptions);
+        // vm.stopBroadcast();
     }
 
     function enforcedOptionsL2(address oapp, uint32 eId, uint16[] memory types, uint128[] memory gases) public {
@@ -299,9 +299,9 @@ contract Utils is Script {
         console.log("params");
         console.logBytes(abi.encodeWithSelector(IOAppOptionsType3(oapp).setEnforcedOptions.selector, aEnforcedOptions));
         console.log("-----------------------------");
-        vm.startBroadcast();
-        IOAppOptionsType3(oapp).setEnforcedOptions(aEnforcedOptions);
-        vm.stopBroadcast();
+        // vm.startBroadcast();
+        // IOAppOptionsType3(oapp).setEnforcedOptions(aEnforcedOptions);
+        // vm.stopBroadcast();
     }
 
     function parseOptions(bytes memory _abiEncodedOptions) public pure returns(bytes memory data) {
